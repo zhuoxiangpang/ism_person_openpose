@@ -1,12 +1,14 @@
 import argparse
 import time
 from pathlib import Path
+from torch import from_numpy, jit
 
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
-
+import os
+import datetime
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, \
@@ -18,6 +20,7 @@ import runOpenpose
 
 
 def detect(save_img=False):
+    global ip
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
@@ -26,13 +29,18 @@ def detect(save_img=False):
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
+    #加载摔倒检测的模型
+    print("加载摔倒检测的模型开始")
+    net = jit.load(r'.\weights\openpose.jit')
+    action_net = jit.load(r'.\action_detect\checkPoint\action.jit')
+    print("加载摔倒检测的模型结束")
     # Initialize
     set_logging()
     # 获取设备
     device = select_device(opt.device)
     # 如果设备为gpu，使用Float16
     half = device.type != 'cpu'  # half precision only supported on CUDA
-
+    half =False
     # Load model
     # 加载Float32模型，确保用户设定的输入图片分辨率能整除32（如果不能则调整为能整除并删除）
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -40,13 +48,6 @@ def detect(save_img=False):
     # 设置Float16
     if half:
         model.half()  # to FP16
-
-    # Second-stage classifier
-    # 设置第二次分类，默认为不使用
-    classify = False
-    if classify:
-        modelc = load_classifier(name='best', n=1)  # initialize
-        modelc.load_state_dict(torch.load('weights/best.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     # 通过不同的输入源来设置不同的数据加载方式
@@ -116,8 +117,8 @@ def detect(save_img=False):
 
         # Apply Classifier
         # 添加二次分类，默认不适用
-        if classify:
-            pred = apply_classifier(pred, modelc, img, im0s)
+        # if classify:
+        #     pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process detections
         # 对每一张图片作处理
@@ -172,39 +173,37 @@ def detect(save_img=False):
                 y = c2[1] - c1[1]
                 if x / y >= 0.8:  # 比例>0.8 可能会是摔倒
                     print('进行人体姿态检测')
-                    runOpenpose.runPose(im0,boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
+                    runOpenpose.run_demo(net,action_net,im0,256,True,boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
                     break
             # Print time (inference + NMS)
             # 打印向前传播+nms时间
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
-            # Stream results
-            # 如果设置展示，则show图片/视频
-            if view_img:
-                cv2.imshow(str(p), im0)
-            runOpenpose.runPose(im0, boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
-
-            # Save results (image with detections)
-            # 设置保存图片/视频
             if save_img:
                 if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
+                    imageName = str(time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))) + ".jpg"
+                    imagePath = r"/photo/ism_uniform/" + str(ip) + "/" + str(
+                        datetime.datetime.now().strftime("%Y-%m-%d")) + "/"
+                    if not os.path.exists(r"/photo/ism_uniform/" + str(ip) + "/"):
+                        os.makedirs(r"/photo/ism_uniform/" + str(ip) + "/")
+                    if not os.path.exists(r"/photo/ism_uniform/" + str(ip) + "/" + "/" + str(
+                            datetime.datetime.now().strftime("%Y-%m-%d"))):
+                        os.makedirs(r"/photo/ism_uniform/" + str(ip) + "/" + "/" + str(
+                            datetime.datetime.now().strftime("%Y-%m-%d")))
+                    cv2.imwrite(imagePath + imageName, im0)
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
                         if isinstance(vid_writer, cv2.VideoWriter):
                             vid_writer.release()  # release previous video writer
-
                         fourcc = 'mp4v'  # output video codec
                         fps = vid_cap.get(cv2.CAP_PROP_FPS)
                         w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
+                print('保存图片')
 
-    if save_txt or save_img:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        print(f"Results saved to {save_dir}{s}")
     # 打印总时间
     print(f'Done. ({time.time() - t0:.3f}s)')
 
@@ -214,9 +213,7 @@ if __name__ == '__main__':
     # 选用训练的权重，可用根目录下的yolov5s.pt，也可用runs/train/exp/weights/best.pt
     parser.add_argument('--weights', type=str, default='weights/yolov5l.pt', help='model.pt path(s)')
     # 检测数据，可以是图片/视频路径，也可以是'0'(电脑自带摄像头),也可以是rtsp等视频流
-    # parser.add_argument('--source', type=str, default='rtsp://admin:a1234567@10.34.142.14/cam/realmonitor?channel=1&subtype=0', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--source', type=str, default='C:\\zqr\\project\\yolov5\\data\\testImg', help='source')  # file/folder, 0 for webcam
-
+    # parser.add_argument('--source', type=str, default='C:\\zqr\\project\\yolov5\\data\\testImg', help='source')  # file/folder, 0 for webcam
     # 网络输入图片大小
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     # 置信度阈值，检测到的对象属于特定类（狗，猫，香蕉，汽车等）的概率
@@ -224,7 +221,7 @@ if __name__ == '__main__':
     # 做nms的iou阈值
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     # 检测的设备，cpu；0(表示一个gpu设备cuda:0)；0,1,2,3(多个gpu设备)。值为空时，训练时默认使用计算机自带的显卡或CPU
-    parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     # 是否展示检测之后的图片/视频，默认False
     parser.add_argument('--view-img', action='store_true', help='display results')
     # 是否将检测的框坐标以txt文件形式保存，默认False

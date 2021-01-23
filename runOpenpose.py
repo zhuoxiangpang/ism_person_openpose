@@ -179,7 +179,7 @@ def run_demo(net,action_net, image_provider, height_size, cpu, boxList):
                     # fallFlag = 1
             if fallFlag == 1:
                 t = time.time()
-                cv2.imwrite(f'C:/zqr/project/yolov5_openpose/Image/{t}.jpg', img)
+                # cv2.imwrite(f'C:/zqr/project/yolov5_openpose/Image/{t}.jpg', img)
                 print('我保存照片了')
 
 
@@ -290,17 +290,4 @@ def runPose(image,boxList,video_name=''):
 
 
 
-if __name__ == '__main__':
-    # path = 'C:\\zqr\\fallImg\\807\\rgb'
-    # fileList = []
-    # files = os.listdir(path)
-    # for f in files:
-    #     if (os.path.isfile(path + '/' + f)):
-    #         # 添加文件
-    #         fileList.append(f)
-    # for fl in fileList:
-    #     # 打印文件
-    #     detect_main(image_source=path+'\\'+fl, video_name='video1')
 
-    detect_main(image_source=r'C:\zqr\project\openpose_fall_detect_222\data\aaa.jpg',video_name='video1')
-    # detect_main(video_source='C:/Users/lieweiai/Desktop/96507864-1-160.mp4')
