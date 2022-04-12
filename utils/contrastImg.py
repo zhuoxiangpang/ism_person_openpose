@@ -14,25 +14,28 @@ def mat_inter(box1, box2):
         return True
     else:
         return False
-def solve_coincide(box1,box2):
+
+
+def solve_coincide(box1, box2):
     # box=(xA,yA,xB,yB)
     # 计算两个矩形框的重合度
-    if mat_inter(box1,box2)==True:
+    if mat_inter(box1, box2) == True:
         x01, y01, x02, y02 = box1
         x11, y11, x12, y12 = box2
-        col=min(x02,x12)-max(x01,x11)
-        row=min(y02,y12)-max(y01,y11)
-        intersection=col*row
-        area1=(x02-x01)*(y02-y01)
-        area2=(x12-x11)*(y12-y11)
-        coincide=intersection/(area1+area2-intersection)
+        col = min(x02, x12) - max(x01, x11)
+        row = min(y02, y12) - max(y01, y11)
+        intersection = col * row
+        area1 = (x02 - x01) * (y02 - y01)
+        area2 = (x12 - x11) * (y12 - y11)
+        coincide = intersection / (area1 + area2 - intersection)
         return coincide
     else:
         return False
 
-def coincide(boxList,poseBox):
+
+def coincide(boxList, poseBox):
     for box in boxList:
-        coincideValue = solve_coincide(box,poseBox)
+        coincideValue = solve_coincide(box, poseBox)
         if coincideValue > 0.0:
             return coincideValue
     return 0

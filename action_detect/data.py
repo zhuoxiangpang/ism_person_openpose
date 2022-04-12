@@ -37,5 +37,5 @@ class PoseDataSet(Dataset):
         return np.float32(img),np.float32(tag_one_hot)
 
 if __name__ == '__main__':
-    dataset = PoseDataSet('C:/Users/lieweiai/Desktop/human_pose')
+    dataset = PoseDataSet('D:/project/ism_person_openpose/data')
     print(dataset[0][1])

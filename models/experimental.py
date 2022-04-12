@@ -1,4 +1,4 @@
-# This file contains experimental modules
+# This file contains experimental openpose_modules
 
 import numpy as np
 import torch

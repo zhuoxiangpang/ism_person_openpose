@@ -29,9 +29,9 @@ def detect(save_img=False):
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
-    #加载摔倒检测的模型
+    # 加载摔倒检测的模型
     print("加载摔倒检测的模型开始")
-    net = jit.load(r'.\weights\openpose.jit')
+    net = jit.load(r'.\action_detect\checkPoint\openpose.jit')
     action_net = jit.load(r'.\action_detect\checkPoint\action.jit')
     print("加载摔倒检测的模型结束")
     # Initialize
@@ -40,7 +40,6 @@ def detect(save_img=False):
     device = select_device(opt.device)
     # 如果设备为gpu，使用Float16
     half = device.type != 'cpu'  # half precision only supported on CUDA
-    half =False
     # Load model
     # 加载Float32模型，确保用户设定的输入图片分辨率能整除32（如果不能则调整为能整除并删除）
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -173,7 +172,7 @@ def detect(save_img=False):
                 y = c2[1] - c1[1]
                 if x / y >= 0.8:  # 比例>0.8 可能会是摔倒
                     print('进行人体姿态检测')
-                    runOpenpose.run_demo(net,action_net,im0,256,True,boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
+                    runOpenpose.run_demo(net, action_net, im0, 256, True, boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
                     break
             # Print time (inference + NMS)
             # 打印向前传播+nms时间
@@ -211,9 +210,10 @@ def detect(save_img=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # 选用训练的权重，可用根目录下的yolov5s.pt，也可用runs/train/exp/weights/best.pt
-    parser.add_argument('--weights', type=str, default='weights/yolov5l.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', type=str, default='models/yolov5s.pt', help='model.pt path(s)')
     # 检测数据，可以是图片/视频路径，也可以是'0'(电脑自带摄像头),也可以是rtsp等视频流
-    # parser.add_argument('--source', type=str, default='C:\\zqr\\project\\yolov5\\data\\testImg', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--source', type=str, default='D:\\project\\ism_person_openpose\\data\\pics',
+                        help='source')  # file/folder, 0 for webcam
     # 网络输入图片大小
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     # 置信度阈值，检测到的对象属于特定类（狗，猫，香蕉，汽车等）的概率
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     # 做nms的iou阈值
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     # 检测的设备，cpu；0(表示一个gpu设备cuda:0)；0,1,2,3(多个gpu设备)。值为空时，训练时默认使用计算机自带的显卡或CPU
-    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     # 是否展示检测之后的图片/视频，默认False
     parser.add_argument('--view-img', action='store_true', help='display results')
     # 是否将检测的框坐标以txt文件形式保存，默认False
@@ -229,7 +229,8 @@ if __name__ == '__main__':
     # 是否将检测的labels以txt文件形式保存，默认False
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     # 设置只保留某一部分类别，如0或者0 2 3
-    parser.add_argument('--classes', nargs='+',default=0, type=int, help='filter by class: --class 0, or --class 0 2 3')
+    parser.add_argument('--classes', nargs='+', default=0, type=int,
+                        help='filter by class: --class 0, or --class 0 2 3')
     # 进行nms是否也去除不同类别之间的框，默认False
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     # 推理的时候进行多尺度，翻转等操作(TTA)推理
@@ -246,15 +247,4 @@ if __name__ == '__main__':
     print(opt)
 
     with torch.no_grad():
-        if opt.update:  # update all models (to fix SourceChangeWarning)
-            for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
-                # 去除pt 文件中的优化器等信息
-                strip_optimizer(opt.weights)
-        else:
-            print(torch.cuda.device_count())
-            print(torch.cuda.is_available())
-            a = torch.Tensor(5, 3)
-            a = a.cuda()
-            print(a)
-            detect()
+        detect()

@@ -75,7 +75,7 @@ def time_synchronized():
 
 
 def profile(x, ops, n=100, device=None):
-    # profile a pytorch module or list of modules. Example usage:
+    # profile a pytorch module or list of openpose_modules. Example usage:
     #     x = torch.randn(16, 3, 640, 640)  # input
     #     m1 = lambda x: x * torch.sigmoid(x)
     #     m2 = nn.SiLU()
