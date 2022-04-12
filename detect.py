@@ -172,7 +172,7 @@ def detect(save_img=False):
                 y = c2[1] - c1[1]
                 if x / y >= 0.8:  # 比例>0.8 可能会是摔倒
                     print('进行人体姿态检测')
-                    runOpenpose.run_demo(net, action_net, im0, 256, True, boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
+                    runOpenpose.run_demo(net, action_net, [im0], 256, True, boxList)  # 人体姿态检测 将图片和yolov5检测人体的框也传给openpose
                     break
             # Print time (inference + NMS)
             # 打印向前传播+nms时间
@@ -181,15 +181,8 @@ def detect(save_img=False):
             if save_img:
                 if dataset.mode == 'image':
                     imageName = str(time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))) + ".jpg"
-                    imagePath = r"/photo/ism_uniform/" + str(ip) + "/" + str(
-                        datetime.datetime.now().strftime("%Y-%m-%d")) + "/"
-                    if not os.path.exists(r"/photo/ism_uniform/" + str(ip) + "/"):
-                        os.makedirs(r"/photo/ism_uniform/" + str(ip) + "/")
-                    if not os.path.exists(r"/photo/ism_uniform/" + str(ip) + "/" + "/" + str(
-                            datetime.datetime.now().strftime("%Y-%m-%d"))):
-                        os.makedirs(r"/photo/ism_uniform/" + str(ip) + "/" + "/" + str(
-                            datetime.datetime.now().strftime("%Y-%m-%d")))
-                    cv2.imwrite(imagePath + imageName, im0)
+
+                    cv2.imwrite(save_path+imageName, im0)
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path

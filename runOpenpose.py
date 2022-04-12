@@ -1,15 +1,12 @@
 import argparse
-import torch
 import cv2
 import numpy as np
-from PIL import Image
 from torch import from_numpy, jit
 from openpose_modules.keypoints import extract_keypoints, group_keypoints
 from openpose_modules.pose import Pose
 from action_detect.detect import action_detect
 import os
 from math import ceil, floor
-import time
 from utils.contrastImg import coincide
 
 os.environ["PYTORCH_JIT"] = "0"
@@ -205,7 +202,7 @@ def detect_main(video_name=''):
     parser.add_argument('--height-size', type=int, default=256, help='network input layer height size')
     parser.add_argument('--video', type=str, default='', help='path to video file or camera id')
     parser.add_argument('--images', nargs='+',
-                        default='D:\\project\\ism_person_openpose\\data\\test',
+                        default='D:\\project\\ism_person_openpose\\data\\pics',
                         help='path to input image(s)')
     parser.add_argument('--cpu', action='store_true', help='run network inference on cpu')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
