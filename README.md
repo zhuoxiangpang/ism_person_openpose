@@ -11,6 +11,12 @@
 人体的关键点图会保存在data/test中
 pose.py中draw方法的最下面可以控制保存关键点图的位置
 
+运行detect.py  
+会先进行yolo目标检测，检测到人后，detect.py 169 行，加了根据框框的宽高比的判断，后续可自行修改
+根据坐标将人的图片扣出给openpose  进行姿态检测  
+runOpenpose.py 159行 加了一些限制，后续可自行修改
+
+
 如果想要检测其他姿势：
 1.收集图片，跑runOpenpose.py 文件获得人体的关键点图
 2.对人体的关键点图根据自己想要的进行分类放在data/train 和 data/test
